@@ -1,0 +1,14 @@
+# Namespace
+kubectl get namespace
+kubectl get ns
+
+kubectl get pods -n kube-system
+kubectl create ns stage
+
+kubectl run nginx --image=nginx --namespace=stage -o yaml --dry-run=client > nginx-pod-ns.yml
+kubectl expose pod nginx --port=80 --type=NodePort -n=stage
+
+kubectl get pods -n stage
+
+
+# Service 
