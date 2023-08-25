@@ -6,7 +6,7 @@ metadata:
     app: redis-srv
   name: redis-srv
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: redis-srv
