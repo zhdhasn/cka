@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: website-com-bd
+  name: website-com-bd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: website-com-bd
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: website-com-bd
+    spec:
+      containers:
+      - image: iamjahid/apache:23
+        name: apache
+        resources: {}
+status: {}
+
