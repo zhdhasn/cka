@@ -18,7 +18,7 @@ spec:
         app: website-com-bd
     spec:
       containers:
-      - image: iamjahid/apache:23
+      - image: iamjahid/apache:24
         name: apache
         resources: {}
 status: {}
