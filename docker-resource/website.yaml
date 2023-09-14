@@ -1,7 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: website-com-bd
   name: website-com-bd
@@ -13,13 +12,10 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: website-com-bd
     spec:
       containers:
-      - image: iamjahid/apache:24
-        name: apache
-        resources: {}
-status: {}
+      - image: iamjahid/web:1.0
+        name: nginx
 
