@@ -18,7 +18,7 @@ spec:
         app: nginx-srv
     spec:
       containers:
-      - image: nginx
+      - image: iamjahid/online-shop:37
         name: nginx
         resources: {}
 status: {}
