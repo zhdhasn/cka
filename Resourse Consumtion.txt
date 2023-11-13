@@ -1,0 +1,53 @@
+Resourse request:
+
+	Resourse request:
+	resourse limit:
+	
+			[1Mi = 1.048 Mb]
+			
+
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+		
+		
+			[cpu= 500m = 1/2 Core CPU]
+		
+OOMKILLED > died for memoryleak
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: redis
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: redis
+    spec:
+      containers:
+      - image: redis
+        name: redis
+        resources:
+          requests:
+             memory: "64Mi"
+             cpu: "250m"
+          limits:
+             memory: "128Mi"
+             cpu: "256m"
+status: {}
