@@ -1,0 +1,21 @@
+kubectl run apache --image=httpd -o yaml --dry-run=client > apache-pod.yaml
+
+
+vim apache-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: apache
+  name: apache
+spec:
+  containers:
+  - image: httpd
+    name: apache
+  nodeName: cka-w
+
+
+
+kubectl apply -f apache-pod.yaml
+kubectl describe pod apache

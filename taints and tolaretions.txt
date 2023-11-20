@@ -1,0 +1,22 @@
+kubectl taint node worker color=red:NoSchedule
+
+kubectl describe nodes | grep -i taints
+Taints:             node-role.kubernetes.io/control-plane:NoSchedule
+Taints:             color=red:NoSchedule
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: redis
+  name: redis
+spec:
+  containers:
+  - image: redis
+    name: redis
+  tolerations:
+        - key: color
+          value: red
+          effect: NoSchedule
