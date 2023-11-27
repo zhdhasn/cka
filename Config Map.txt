@@ -1,0 +1,43 @@
+Environment Variable:
+    spec:
+      containers:
+      - image: kodekloud/webapp-color
+        name: webapp-color
+		env:
+		- name: APP_COLOR
+		  value: red
+		  
+		  
+Create config map: Imperative way
+kubectl create cm app-color --from-literal=APP_COLOR=ash
+
+
+kubectl get cm
+kubectl describe cm app-color
+kubectl edit cm app-color
+
+Now apply config map to deployment
+
+    spec:
+      containers:
+      - image: kodekloud/webapp-color
+        name: webapp-color
+        envFrom:
+        - configMapRef:
+                name: app-color2
+
+Declarative way:
+kubectl create cm app-color3 --from-literal=APP_COLOR=pink -o yaml --dry-run=client > app-color3.yaml
+
+
+kubectl edit cm app-color
+
+after edit cm need to restart the deploymentm
+to restrat a deploy:
+kubectl rollout restart deploy/webapp-color
+
+
+
+
+
+echo -n "cGFzc3cwcmQ=" | base64 --decode
