@@ -1,0 +1,26 @@
+Step:1 
+Drain the node (cordon=Scheduling Disable)
+kubectl drain funman --ignore-daemonsets --delete-emptydir-data
+
+Step:2
+login to Master & worker node
+apt update
+
+Cluster Update: Must drain each node before upgrade
+
+kubeadm upgrade plan
+apt-get install kubeadm=1.28.2-00
+kubeadm upgrade apply v1.28.2
+apt-get install kubelet=1.28.2-00
+kubectl uncordon master
+
+Worker node update:
+
+apt-get install kubeadm=1.28.2-00
+kubeadm upgrade node
+apt-get install kubelet=1.28.2-00
+kubectl uncordon master
+
+
+
+

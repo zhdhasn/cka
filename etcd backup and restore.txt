@@ -1,0 +1,24 @@
+ETCD backup and restore:
+
+snap install etcd       
+apt  install etcd-client
+
+
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /opt/etcdbk-040623.db
+
+Verify the backup:
+
+ETCDCTL_API=3 etcdctl snapshot status /opt/etcdbk-040623.db
+d74f6874, 22138, 875, 3.3 MB
+
+
+We can check the etcd curent location from
+vi /etc/kubernetes/manifests/etcd.yaml
+
+
+ETCDCTL_API=3 etcdctl --data-dir="/var/lib/etcd-back" \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot restore /opt/etcdbk-040623.db

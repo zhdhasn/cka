@@ -1,0 +1,36 @@
+Cluster Member list Check:
+ETCDCTL_API=3 etcdctl --endpoints 127.0.0.1:2379 \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  member list  
+
+etcd DB backup:
+ETCDCTL_API=3 etcdctl --endpoints 127.0.0.1:2379 \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+snapshot save /opt/snapshot.db
+
+verify backup file:
+ETCDCTL_API=3 etcdctl snapshot status /opt/snapshot.db
+
+
+ETCDCTL_API=3 etcdctl --data-dir="/var/lib/etcd-back-2" \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot restore /opt/snapshot.db
+
+ETCDCTL_API=3 etcdctl --endpoints 192.168.1.240:2379 snapshot restore /opt/snapshot.db
+
+ETCDCTL_API=3 etcdctl --endpoints=192.168.1.240:2379 endpoint health
+
+
+ETCDCTL_API=3 etcdctl --data-dir="/var/lib/etcd" \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot restore /opt/snapshot.db
