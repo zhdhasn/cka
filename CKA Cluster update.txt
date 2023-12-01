@@ -5,6 +5,7 @@ kubectl drain funman --ignore-daemonsets --delete-emptydir-data
 Step:2
 login to Master & worker node
 apt update
+apt-cache madison kubeadm
 
 Cluster Update: Must drain each node before upgrade
 
@@ -22,5 +23,5 @@ apt-get install kubelet=1.28.2-00
 kubectl uncordon master
 
 
-
+https://k21academy.com/docker-kubernetes/k8s-cluster-upgrade-step-by-step/
 
