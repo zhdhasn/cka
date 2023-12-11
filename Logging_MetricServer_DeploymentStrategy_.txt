@@ -1,0 +1,148 @@
+docker run --help
+
+vi Dockerfile
+
+FROM busybox:latest
+
+ENTRYPOINT ["sleep"]
+CMD ["10"]
+
+
+docker build -t busybox:a1 .
+
+
+docker images
+REPOSITORY          TAG       IMAGE ID       CREATED         SIZE
+busybox             a1        74ddc11011cb   12 days ago     4.86MB
+
+docker run -d --name=busybox-sleeper busybox:a1
+
+docker container ls
+
+docker container ls | grep -i 34b2f9e071b2087beede23506493751644aacab2af9bc9d44779f2921efbad06
+
+docker container ls -a
+
+
+Nginx image run:
+
+docker run --name=webserver nginx
+
+docker run -d --name=webserver -p 5000:80 nginx
+docker run -d --name=web -p 5000:80 nginx
+
+docker logs <container name>
+
+
+Logging in Kubernetes:
+
+Show pod log:
+kubectl logs nginx-pod
+
+To show log Stream:
+kubectl logs -f nginx-pod
+
+Multiplae container in a pod log check:
+kubectl logs -f <podname> -c <containername>
+
+multiple container pod create:
+kubectl run multi-cont-pod --image=nginx -o yaml --dry-run=client > multi-cont-pod.yaml
+
+vi multi-cont-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: multi-cont-pod
+  name: multi-cont-pod
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+  - image: redis
+    name: redis
+
+
+
+kubectl logs -f multi-cont-pod -c nginx
+kubectl logs -f multi-cont-pod -c redis
+
+kubectl describe pod multi-cont-pod
+
+Metric Server setup:
+kubectl get pods -n kube-system
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+kubectl edit deploy metrics-server -n kube-system
+
+- --kubelet-insecure-tls
+
+
+kubectl top pods
+NAME                          CPU(cores)   MEMORY(bytes)
+apache-web-78f56fc478-scj9b   1m           6Mi
+multi-cont-pod                2m           6Mi
+
+1m = Mile Core (1000/2)
+6Mi = Mebi Byte (1000/12)
+
+kubectl top pods -n kube-system
+
+
+kubectl top nodes
+NAME         CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+cka-master   130m         6%     1147Mi          60%
+cka-node1    64m          3%     863Mi           45%
+cka-node2    61m          3%     958Mi           50%
+cka-node3    58m          2%     902Mi           47%
+
+Application Lifecycle Management:
+
+create deploy:
+kubectl create deploy webservice --image=kodekloud/webapp-color:v1 --port=80
+
+Expose deploy:
+kubectl expose deploy webservice --name=webservice --port=80 --type=LoadBalancer
+
+--------------------------------------------------------------------------------
+kubectl create deploy apache-web --image=httpd --port=8080
+kubectl expose deploy apache-web --name=apache-web --port=8080 --type=NodePort
+--------------------------------------------------------------------------------
+To edit a Deployment:
+kubectl edit deploy webservice
+
+To edit service:
+kubectl edit svc webservice
+--------------------------------------------------------------------------------
+Scale up:
+kubectl scale deploy webservice --replicas=3
+
+Rolling update:
+
+kubectl edit deploy webservice
+
+spec:
+      containers:
+      - image: kodekloud/webapp-color:v2
+
+to check rollout status:
+kubectl rollout status deploy/webservice
+
+Undo Rollout:
+kubectl rollout undo deploy/webservice
+---------------------------------------------------------------------------------
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+
+kubectl edit deploy webservice
+
+strategy:																
+    type: Recreate 
+
+

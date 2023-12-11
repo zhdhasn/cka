@@ -1,0 +1,47 @@
+https://metallb.universe.tf/installation/
+
+Run this for installation:
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+
+kubectl get all -n metallb-system
+
+vi ip-addresspool.yaml
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.240-192.168.1.250
+  
+  
+kubectl apply -f ip-addresspool.yaml -n metallb-system
+
+
+vi l2-advertisment.yaml
+
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - first-pool
+
+kubectl apply -f l2-advertisment.yaml
+
+Now test the ingress:
+
+kubectl run nginx --image=nginx
+kubectl expose pod nginx --name=nginx-web --port=80 --type=LoadBalancer
+
+kubectl get svc
+NAME         TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)        AGE
+kubernetes   ClusterIP      10.96.0.1       <none>           443/TCP        72d
+nginx-web    LoadBalancer   10.103.239.78   103.204.200.72   80:31364/TCP   7s
+
+
+

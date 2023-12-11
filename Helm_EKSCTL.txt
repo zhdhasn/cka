@@ -1,0 +1,80 @@
+
+https://www.learnitguide.net/2023/04/etcd-backup-and-restore-on-kubernetes.html
+https://www.learnitguide.net/2023/04/how-to-install-helm-3-for-kubernetes.html
+Helm:
+
+https://artifacthub.io/
+
+Installing Helm in kubernetes cluster:
+$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
+
+
+
+
+
+add nginx helm repo (nginx helm-charts github)
+
+https://github.com/nginxinc/helm-charts
+
+adding repo:
+helm repo add nginx-stable https://helm.nginx.com/stable
+helm repo update
+
+helm repo list
+helm search repo nginx-stable
+--------------------------------------------------------
+
+https://artifacthub.io/packages/helm/bitnami/nginx
+
+installing nginx pod
+
+helm install my-release oci://registry-1.docker.io/bitnamicharts/nginx
+
+
+Uninistall:
+helm uninstall webservice
+
+--------------------now create eksctl cluster--------------------------------
+
+login to aws cli.
+
+vi eksctl-cluster.yaml
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: cka-eks-cluster
+  region: us-east-1
+  version: '1.26'
+  tags:
+    team: platform
+    project: cka
+
+managedNodeGroups:
+  - name: cka-ng01
+    instanceType: c6i.large
+    volumeSize: 100
+    minSize: 2
+    maxSize: 3
+    desiredCapacity: 2
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+
+
+iam:
+  withOIDC: true
+
+vpc:
+  cidr: 10.30.0.0/16
+  
+
+eksctl create cluster -f eksctl-cluster.yaml

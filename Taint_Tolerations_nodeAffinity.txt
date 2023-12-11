@@ -1,0 +1,62 @@
+Manual Scheduling:
+
+vi apache.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: apache
+  name: apache
+spec:
+  containers:
+  - image: httpd
+    name: apache
+  nodeName: cka-node3
+
+kubectl apply -f apache.yaml
+kubectl get pods -o wide
+kubectl describe pod apache
+----------------------------------------------------
+Taints check in Node:
+kubectl describe nodes cka-node1 | grep -i taints
+
+Applying Taint:
+kubectl taint nodes cka-node2 color=red:NoSchedule
+kubectl taint nodes cka-node3 color=green:NoExecute
+
+Check:
+kubectl describe nodes cka-node1| grep -i taint
+
+Now edit pod.yaml and add Tolerations section:
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+  tolerations:
+  - key: color
+    value: red
+    effect: NoSchedule
+
+kubectl apply -f pod.yaml
+
+get pods -o wide
+NAME                 READY   STATUS    RESTARTS   AGE   IP                NODE        NOMINATED NODE   READINESS GATES
+my-app-dhaka         1/1     Running   0          14h   192.168.115.71    cka-node1   <none>           <none>
+nginx                1/1     Running   0          13s   192.168.148.137   cka-node2   <none>           <none>
+replicaset-1-22kkf   0/1     Pending   0          14m   <none>            <none>      <none>           <none>
+replicaset-1-52pkn   1/1     Running   0          47h   192.168.148.131   cka-node2   <none>           <none>
+replicaset-1-hss9x   0/1     Pending   0          14m   <none>            <none>      <none>           <none>
+replicaset-1-rgfr8   1/1     Running   0          47h   192.168.115.66    cka-node1   <none>           <none>
+replicaset-2-5wflt   1/1     Running   0          47h   192.168.148.132   cka-node2   <none>           <none>
+replicaset-2-sd8wj   1/1     Running   0          47h   192.168.115.67    cka-node1   <none>           <none>
+
+
+
+
+

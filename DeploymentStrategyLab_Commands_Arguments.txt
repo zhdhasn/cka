@@ -1,0 +1,48 @@
+Busybox container create:
+
+kubectl run busybox --image=busybox:latest -o yaml --dry-run=client > busybox.yaml
+
+vi busybox.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: busybox
+  name: busybox
+spec:
+  containers:
+  - image: busybox:latest
+    name: busybox
+    command: ["sleep"]
+    args: ["10"]
+
+
+
+kubectl get pods -w
+
+Another:
+
+vi busybox.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: busybox
+  name: busybox
+spec:
+  containers:
+  - image: busybox:latest
+    name: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 5;done"]
+
+kubectl apply -f busybox.yaml
+
+kubectl logs -f busybox
+
+
+

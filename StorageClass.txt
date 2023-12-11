@@ -1,0 +1,114 @@
+NFS server Setup:
+
+apt install nfs-kernel-server
+
+mkdir -p /mnt/nfs_share
+chown -R nobody:nogroup /mnt/nfs_share/
+chmod 777 /mnt/nfs_share/
+
+vi /etc/exports
+/mnt/nfs_share 103.204.200.0/24(rw,sync,no_subtree_check)
+
+exportfs -a
+exportfs -rav
+exporting 103.204.200.0/24:/mnt/nfs_share
+
+systemctl restart nfs-kernel-server
+
+hostname -I
+
+now,
+in google nfs sigs
+https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
+
+
+
+
+	
+
+Now installing helm in K8s cluster master node.
+
+$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+$ chmod 700 get_helm.sh
+$ ./get_helm.sh
+
+
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+    --set nfs.server=103.204.200.19 \
+    --set nfs.path=/mnt/nfs_share
+	
+kubectl get deploy
+kubectl get sc
+NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   106s
+
+for edit storage class
+kubectl edit sc nfs-client
+
+
+need to run this all worker node
+apt update
+apt install nfs-common
+
+now create pvc
+
+vi pvc.yaml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mynfs-pvc
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-client
+  accessModes:
+          - ReadWriteOnce
+		  
+kubectl apply -f pvc.yaml
+
+root@cka-master:~/persistent-volume# kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
+pvc-7ed109c2-c721-4c26-9e43-cfec78a9926f   1Gi        RWO            Delete           Bound    default/mynfs-pvc   nfs-client              33m
+
+root@cka-master:~/persistent-volume# kubectl get pvc
+NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mynfs-pvc   Bound    pvc-7ed109c2-c721-4c26-9e43-cfec78a9926f   1Gi        RWO            nfs-client     84m
+
+now create a pod with this nfs share
+
+vi nginx-pvc.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /var/log/nginx
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+            claimName: mynfs-pvc
+
+
+Log in the NFS server
+
+root@ubuntu-srv:~# cd /mnt/nfs_share/
+
+root@ubuntu-srv:/mnt/nfs_share# ls
+default-mynfs-pvc-pvc-7ed109c2-c721-4c26-9e43-cfec78a9926f
+root@ubuntu-srv:/mnt/nfs_share# cd default-mynfs-pvc-pvc-7ed109c2-c721-4c26-9e43-cfec78a9926f/
+
+root@ubuntu-srv:/mnt/nfs_share/default-mynfs-pvc-pvc-7ed109c2-c721-4c26-9e43-cfec78a9926f# ls
+access.log  error.log
+

@@ -1,0 +1,221 @@
+Create Namespace:
+kubectl create ns app
+
+Create a deploy with nginx image:
+kubectl create deploy j-web --image=nginx --namespace=app --port=80 -o yaml --dry-run=client > j-web.yaml
+
+vi j-web.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: j-web
+  name: j-web
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: j-web
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: j-web
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
+
+kubectl apply -f j-web.yaml -n app
+
+Now expose the Deploy:
+kubectl expose deploy j-web --name=j-web-app --type=ClusterIP --port=80 --namespace=app -o yaml --dry-run=client > j-web-app.yaml
+vi j-web-app.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: j-web
+  name: j-web-app
+  namespace: app
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: j-web
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
+kubectl get pods -n app
+
+kubectl create deploy z-web --image=httpd --namespace=app --port=80 -o yaml --dry-run=client > z-web.yaml
+vi z-web.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: z-web
+  name: z-web
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: z-web
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: z-web
+    spec:
+      containers:
+      - image: httpd
+        name: httpd
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
+
+
+kubectl apply -f z-web.yaml -n app
+kubectl get pods -n app
+
+kubectl expose deploy z-web --name=z-web-app --type=ClusterIP --port=80 --namespace=app -o yaml --dry-run=client > z-web-app.yaml
+vi z-web-app.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: z-web
+  name: z-web-app
+  namespace: app
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: z-web
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
+
+kubectl apply -f z-web-app.yaml -n app
+
+
+root@cka-master:~/ingress# kubectl get pods -n app
+NAME                             READY   STATUS    RESTARTS   AGE
+default-backend-b46b9989-xv5dr   1/1     Running   0          33h
+j-web-67b5cfdc5-mzjzv            1/1     Running   0          33h
+z-web-6c7cf497cf-2kpdv           1/1     Running   0          33h
+
+root@cka-master:~/ingress# kubectl get svc -n app
+NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+default-backend-service   ClusterIP   10.107.149.51   <none>        8080/TCP   33h
+j-web-app                 ClusterIP   10.105.61.248   <none>        80/TCP     33h
+z-web-app                 ClusterIP   10.106.164.6    <none>        80/TCP     33h
+
+Now Configure ingress:
+kubectl apply -f deploy.yaml
+kubectl get all -n ingress-nginx
+
+Path Base ingress:
+vi ingress.yaml		
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-jweb-zweb
+  namespace: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  defaultBackend:
+    service:
+      name: default-http-backend
+      port:
+        number: 8080
+  rules:
+  - http:
+      paths:
+      - path: /jweb
+        pathType: Prefix
+        backend:
+          service:
+           name: j-web-app
+           port:
+            number: 80
+      - path: /zweb
+        pathType: Prefix
+        backend:
+          service:
+           name: z-web-app
+           port:
+            number: 80
+
+kubectl apply -f ingress.yaml
+
+kubectl get ingress -n app
+kubectl describe ingress -n app
+
+Host base ingress configuration:
+vi ingress-host.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-jweb-zweb
+  namespace: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  defaultBackend:
+    service:
+      name: default-http-backend
+      port:
+        number: 8080
+  rules:
+  - host: "k8s.bdpeer.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/jweb"
+        backend:
+          service:
+            name: j-web-app
+            port:
+              number: 80
+  - host: "k8s.bdpeer.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/zweb"
+        backend:
+          service:
+            name: z-web-app
+            port:
+              number: 80
+
+kubectl apply -f ingress-host.yaml
+kubectl describe ingress -n app
+
+
+
+

@@ -1,0 +1,46 @@
+Backup the Master Node:
+
+To access etcd need a tools called "ctcdctl client"
+
+apt install etcd-client
+
+Now run the command for backup ETCTD:
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /opt/snapshot-2.db
+
+Verify and check the backuped snapshoot:
+
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot status /opt/snapshot-2.db
+Check Update:
+
+
+kubectl drain cka-master
+kubectl uncordon cka-master
+
+kubeadm upgrade plan
+apt install kubeadm=1.26.3-00
+apt install kubelet=1.26.3-00
+kubeadm upgrade apply v1.26.3
+
+kubectl get nodes
+NAME         STATUS                     ROLES           AGE   VERSION
+cka-master   Ready                      control-plane   55d   v1.26.3
+cka-node1    Ready,SchedulingDisabled   <none>          17d   v1.26.1
+cka-node2    Ready                      <none>          17d   v1.26.1
+cka-node3    Ready                      <none>          17d   v1.26.1
+
+
+
+Now Update worker node:
+before that drain the worker node cka-node1 from Master node
+
+kubectl drain cka-node1 --ignore-daemonsets
+
+Now Login on worker node cka-node1 and run command:
+
+apt install kubeadm=1.26.3-00
+kubeadm upgrade node
+apt install kubelet=1.26.3-00
+
+now update kubelet in cka-node1
+
+Now Uncordon cka-node1 from master node:

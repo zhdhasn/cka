@@ -1,0 +1,34 @@
+Check Update:
+kubeadm upgrade plan
+
+apt install kubeadm=1.26.3-00
+apt install kubelet=1.26.3-00
+kubectl describe pods kube-apiserver -n kube-system | grep -i image
+kubectl describe pods kube-schedule -n kube-system | grep -i image
+kubectl describe pods kube-controller-manager -n kube-system | grep -i image
+kubectl describe pods etcd-cka-master -n kube-system | grep -i image
+
+kubeadm upgrade apply v1.26.3
+
+kubectl get nodes
+NAME         STATUS                     ROLES           AGE   VERSION
+cka-master   Ready                      control-plane   55d   v1.26.3
+cka-node1    Ready,SchedulingDisabled   <none>          17d   v1.26.1
+cka-node2    Ready                      <none>          17d   v1.26.1
+cka-node3    Ready                      <none>          17d   v1.26.1
+
+
+Now Update worker node:
+before that drain the worker node cka-node1 from Master node
+
+kubectl drain cka-node1 --ignore-daemonsets
+
+Now Login on worker node cka-node1 and run command:
+
+apt install kubeadm=1.26.3-00
+kubeadm upgrade node
+apt install kubelet=1.26.3-00
+
+now update kubelet in cka-node1
+
+Now Uncordon cka-node1 from master node:

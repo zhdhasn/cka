@@ -1,0 +1,357 @@
+Pods:
+		db
+		payrol
+		external
+
+vi db-mysql.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: mysql
+  name: mysql
+spec:
+  containers:
+  - env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: passwd
+    image: mysql
+    imagePullPolicy: Always
+    name: mysql
+    ports:
+    - containerPort: 3306
+      protocol: TCP
+
+vi db-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    name: mysql
+  name: db-service
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    name: mysql
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
+kubectl apply -f mysql-db.yaml
+kubectl apply -f db-service.yaml
+
+vi payroll-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: payroll
+  name: payroll
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: APP_NAME
+      value: Payroll Application
+    - name: BG_COLOR
+      value: blue
+    image: kodekloud/webapp-conntest
+    imagePullPolicy: Always
+    name: payroll
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+
+vi payroll-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    name: payroll
+  name: payroll-service
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 30083
+  selector:
+    name: payroll
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+
+kubectl apply -f payroll-pod.yaml
+kubectl apply -f payroll-service.yaml
+
+vi external-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: external
+  name: external
+spec:
+  containers:
+  - env:
+    - name: APP_NAME
+      value: External Facing Application
+    - name: BG_COLOR
+      value: red
+    image: kodekloud/webapp-conntest
+    imagePullPolicy: Always
+    name: external
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+
+vi external-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    name: external
+  name: external-service
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 30080
+  selector:
+    name: external
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+  
+
+kubectl apply -f external-pod.yaml
+kubectl apply -f external-service.yaml
+
+root@cka-master:~/netpol# kubectl get pods
+NAME       READY   STATUS    RESTARTS   AGE
+external   1/1     Running   0          85s
+mysql      1/1     Running   0          8m32s
+nginx      1/1     Running   0          11d
+payroll    1/1     Running   0          3m4s
+
+
+root@cka-master:~/netpol# kubectl get svc
+NAME               TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)          AGE
+db-service         ClusterIP      10.102.230.226   <none>           3306/TCP         7m45s
+external-service   LoadBalancer   10.105.173.166   <pending>        8080:30080/TCP   33s
+kubernetes         ClusterIP      10.96.0.1        <none>           443/TCP          84d
+nginx-web          LoadBalancer   10.103.239.78    103.204.200.72   80:31364/TCP     11d
+payroll-service    LoadBalancer   10.98.156.81     <pending>        8080:30083/TC
+
+Now check connectivity from web browser.
+
+Now Apply Network policy
+
+vi netpol.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector:
+    matchLabels:
+      name: mysql
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          name: payroll
+    ports:
+    - protocol: TCP
+      port: 3306
+	  
+kubectl apply -f netpol.yaml
+
+root@cka-master:~/netpol# kubectl get netpol db-policy
+NAME        POD-SELECTOR   AGE
+db-policy   name=mysql     30s
+
+
+root@cka-master:~/netpol# kubectl describe netpol db-policy
+Name:         db-policy
+Namespace:    default
+Created on:   2023-05-08 05:56:19 +0000 UTC
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     name=mysql
+  Allowing ingress traffic:
+    To Port: 3306/TCP
+    From:
+      PodSelector: name=payroll
+  Not affecting egress traffic
+  Policy Types: Ingress
+root@cka-master:~/netpol#
+
+------------------------------------------------------------------------------------------
+vi security-context.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-context-demo
+spec:
+  securityContext:
+    runAsUser: 1000
+  containers:
+  - name: sec-ctx-demo
+    image: busybox:1.28
+    command: [ "sh", "-c", "sleep 1h" ]
+	
+kubectl apply -f security-contex.yaml
+
+kubectl exec -it security-context-demo -- /bin/sh
+
+$ id
+uid=1000 gid=0(root)
+
+Persistent Volume:
+---------------------------------hostPath---------------------------------------------
+https://kubernetes.io/docs/concepts/storage/volumes/
+
+vi nginx-hostpath.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /var/log/nginx
+  volumes:
+  - name: data
+    hostPath:
+      path: /mnt/data
+	  
+kubectl apply -f nginx-hostpath.yaml
+
+root@cka-master:/mnt/data# kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS      AGE     IP                NODE        NOMINATED NODE   READINESS GATES
+external                1/1     Running   0             8h      192.168.51.95     cka-node3   <none>           <none>
+mysql                   1/1     Running   0             11h     192.168.51.92     cka-node3   <none>           <none>
+nginx                   1/1     Running   0             3m26s   192.168.115.100   cka-node1   <none>           <none>
+payroll                 1/1     Running   0             11h     192.168.51.93     cka-node3   <none>           <none>
+security-context-demo   1/1     Running   7 (14m ago)   7h14m   192.168.51.97     cka-node3   <none>           <none>
+
+Nginx running on cka-node1, ssh to this worker node:
+
+root@cka-node1:/mnt/data# ll
+total 12
+drwxr-xr-x 2 root root 4096 May  8 16:42 ./
+drwxr-xr-x 3 root root 4096 May  8 16:42 ../
+-rw-r--r-- 1 root root    0 May  8 16:42 access.log
+-rw-r--r-- 1 root root  505 May  8 16:42 error.log
+
+Now delete this nginx pod from cluster, and again check in previous location.
+
+----------------------pv,pvc----------------------------------------------------------
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
+
+vi pv.yaml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: "/opt"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+kubectl apply -f nginx-pv.yaml
+
+root@cka-master:~/persistent-volume# kubectl get pv,pvc
+NAME                     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM            STORAGECLASS   REASON   AGE
+persistentvolume/my-pv   2Gi        RWO            Retain           Bound    default/my-pvc                           9m10s
+
+NAME                           STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/my-pvc   Bound    my-pv    2Gi        RWO                           9m10s
+
+Now create a nginx pod with this pvc,
+
+vi nginx-pv.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /var/log/nginx
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+            claimName: my-pvc
+
+kubectl apply -f nginx-pv.yaml
+
+root@cka-master:~/persistent-volume# kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS       AGE   IP                NODE        NOMINATED NODE   READINESS GATES
+external                1/1     Running   0              20h   192.168.51.95     cka-node3   <none>           <none>
+mysql                   1/1     Running   0              23h   192.168.51.92     cka-node3   <none>           <none>
+nginx                   1/1     Running   0              22s   192.168.115.101   cka-node1   <none>           <none>
+
+login to cka-node1
+
+
+root@cka-node1:/opt# ls -l
+total 12
+-rw-r--r-- 1 root root    0 May  9 05:03 access.log
+drwxr-xr-x 3 root root 4096 Feb 12 17:44 cni
+drwx--x--x 4 root root 4096 Feb 12 17:36 containerd
+-rw-r--r-- 1 root root 1126 May  9 05:06 error.log
+
+
+
+
+
+
