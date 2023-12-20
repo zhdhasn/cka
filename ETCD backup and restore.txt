@@ -1,0 +1,28 @@
+Backup: 	
+		ETCDCTL_API=3 etcdctl snapshot save /your-location/<backup-name>.db --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key
+		
+Restore: 
+		1.	rm -rf /var/lib/etcd
+			
+		2.	ETCDCTL_API=3 etcdctl snapshot restore /your-location/<backup-name>.db --endpoints=https://127.0.0.1:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key --name=<"--name" value from etcd.yaml file> --data-dir=/var/lib/etcd --initial-cluster=<"- --initial-cluster" value from etcd.yaml file> --initial-cluster-token=etcd-cluster-1 --initial-advertise-peer-urls=<"- --listen-peer-urls" value from etcd.yaml file> --skip-hash-check=true
+			
+		3.  mv /etc/kubernetes/manifests/etcd.yaml .
+		4.  mv etcd.yaml /etc/kubernetes/manifests/
+		
+Then wait for the ETCD server to restart. After restarting your ETCD server will be restored.
+
+
+ETCDCTL_API=3 etcdctl snapshot restore /opt/etcd.db \
+	 --endpoints=https://127.0.0.1:2379 \
+	 --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+	 --cert=/etc/kubernetes/pki/etcd/server.crt \
+	 --key=/etc/kubernetes/pki/etcd/server.key \
+	 --name=controlplane \
+	 --data-dir=/var/lib/etcd \
+	 --initial-cluster=controlplane=https://172.30.1.2:2380 \
+         --initial-cluster-token=etcd-cluster-1 \
+         --initial-advertise-peer-urls=https://172.30.1.2:2380 \
+	 --skip-hash-check=true
+
+
+
