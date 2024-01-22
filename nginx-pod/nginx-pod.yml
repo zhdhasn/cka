@@ -6,5 +6,5 @@ metadata:
   name: nginx
 spec:
   containers:
-  - image: nginx
-    name: iamjahid/k8s-pro:35
+  - image: iamjahid/k8s-pro:35
+    name: nginx
