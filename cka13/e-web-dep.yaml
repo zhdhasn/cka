@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: e-web
+  name: e-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-web
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: e-web
+    spec:
+      containers:
+      - image: iamjahid/k8s-pro:latest
+        name: nginx
+        resources: {}
+status: {}
