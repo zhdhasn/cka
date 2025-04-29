@@ -18,7 +18,7 @@ spec:
         app: e-web
     spec:
       containers:
-      - image: iamjahid/k8s-pro:latest
+      - image: iamjahid/k8s-pro:v4
         name: nginx
         resources: {}
 status: {}
