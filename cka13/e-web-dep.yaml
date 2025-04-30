@@ -6,7 +6,7 @@ metadata:
     app: e-web
   name: e-web
 spec:
-  replicas: 2
+  replicas: 4
   selector:
     matchLabels:
       app: e-web
